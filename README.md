@@ -10,6 +10,7 @@ file_path_source = './sample_data/hello_smpl_KXRULS.obj' #source body obj
 file_path_target = './sample_data/hello_smpl_X0JGKP.obj' #target body obj
 
 step 2:
+
 run blender base.blend --background --python render_maps.py
 in OSX, you may want to replace blender with /Applications/Blender/blender.app/Contents/MacOS/blender
 
