@@ -1,5 +1,5 @@
-# OSX
-# /Applications/Blender/blender.app/Contents/MacOS/blender base.blend --background --python render_maps.py 
+# tested with blender 2.79
+# OSX: /Applications/Blender/blender.app/Contents/MacOS/blender base.blend --background --python render_maps.py 
 
 
 import bpy
@@ -44,25 +44,59 @@ import numpy as np
 cam_sou = np.load(file_path_source_cam,allow_pickle=True)
 cam_tar = np.load(file_path_target_cam,allow_pickle=True)
 
-
-for scene in bpy.data.scenes:
-    scene.render.resolution_x = target_img_res_x
-    scene.render.resolution_y = target_img_res_y
-
-bpy.data.objects['Camera'].location[0]= -cam_tar['camera_translation'][0][0]
-bpy.data.objects['Camera'].location[1]= -cam_tar['camera_translation'][0][2]
-bpy.data.objects['Camera'].location[2]= cam_tar['camera_translation'][0][1]
-bpy.data.objects['Camera'].rotation_euler[0]=np.pi/2
-bpy.data.objects['Camera'].rotation_euler[1]=0
-bpy.data.objects['Camera'].rotation_euler[2]=0
-
 ob1 = bpy.data.objects[obj1_name]
 me1 = ob1.data
 ob2 = bpy.data.objects[obj2_name]
 me2 = ob2.data
 
-#ob1.rotation_euler[0] = 0
-#ob2.rotation_euler[0] = 0
+ob1.rotation_euler[0] = 0
+ob2.rotation_euler[0] = 0
+
+bpy.data.objects[obj2_name].hide=True
+bpy.data.objects[obj2_name].hide_render=True
+
+for scene in bpy.data.scenes:
+    scene.render.resolution_x = source_img_res_x
+    scene.render.resolution_y = source_img_res_y
+
+bpy.data.objects['Camera_sou'].location[0]= -cam_sou['camera_translation'][0][0]
+bpy.data.objects['Camera_sou'].location[1]= cam_sou['camera_translation'][0][1]
+bpy.data.objects['Camera_sou'].location[2]= cam_sou['camera_translation'][0][2]
+bpy.data.objects['Camera_sou'].rotation_euler[0]=0
+bpy.data.objects['Camera_sou'].rotation_euler[1]=0
+bpy.data.objects['Camera_sou'].rotation_euler[2]=0
+
+scene.camera = bpy.data.objects['Camera_sou']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'source.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
+
+
+bpy.data.objects[obj2_name].hide=False
+bpy.data.objects[obj2_name].hide_render=False
+bpy.data.objects[obj1_name].hide=True
+bpy.data.objects[obj1_name].hide_render=True
+
+for scene in bpy.data.scenes:
+    scene.render.resolution_x = target_img_res_x
+    scene.render.resolution_y = target_img_res_y
+
+bpy.data.objects['Camera_tar'].location[0]= -cam_tar['camera_translation'][0][0]
+bpy.data.objects['Camera_tar'].location[1]= cam_tar['camera_translation'][0][1]
+bpy.data.objects['Camera_tar'].location[2]= cam_tar['camera_translation'][0][2]
+bpy.data.objects['Camera_tar'].rotation_euler[0]=0
+bpy.data.objects['Camera_tar'].rotation_euler[1]=0
+bpy.data.objects['Camera_tar'].rotation_euler[2]=0
+
+scene.camera = bpy.data.objects['Camera_tar']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'target.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
+
+bpy.data.objects[obj1_name].hide=False
+bpy.data.objects[obj1_name].hide_render=False
+
+
+
+
 
 import numpy as np
 offset3 = np.zeros((len(me1.vertices),3))
@@ -81,13 +115,14 @@ from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
 
 scene = bpy.context.scene
-cam = bpy.data.objects['Camera']
-cs, ce = cam.data.clip_start, cam.data.clip_end
+cam_sou = bpy.data.objects['Camera_sou']
+cam_tar = bpy.data.objects['Camera_tar']
+cs, ce = cam_tar.data.clip_start, cam_tar.data.clip_end
 mat_world_1 = bpy.data.objects[obj1_name].matrix_world
 mat_world_2 = bpy.data.objects[obj2_name].matrix_world
 for i in range(len(me1.vertices)):
-    co_ndc_1 = world_to_camera_view(scene, cam, mat_world_1 * me1.vertices[i].co)
-    co_ndc_2 = world_to_camera_view(scene, cam, mat_world_2 * me2.vertices[i].co)
+    co_ndc_1 = world_to_camera_view(scene, cam_sou, mat_world_1 * me1.vertices[i].co)
+    co_ndc_2 = world_to_camera_view(scene, cam_tar, mat_world_2 * me2.vertices[i].co)
     if (0.0 < co_ndc_1.x < 1.0 and 0.0 < co_ndc_1.y < 1.0 and cs < co_ndc_1.z <  ce):
         vis1[i] = 1
     if (0.0 < co_ndc_2.x < 1.0 and 0.0 < co_ndc_2.y < 1.0 and cs < co_ndc_2.z <  ce):
@@ -123,6 +158,7 @@ if ob2.data.materials:
 else:
     ob2.data.materials.append(mat)
 
+scene.camera = bpy.data.objects['Camera_tar']
 bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap.png'
 bpy.ops.render.render(write_still=True, use_viewport=True)
 
@@ -134,10 +170,10 @@ from mathutils.bvhtree import BVHTree
 bvhtree = BVHTree.FromObject(ob1, bpy.context.scene)
 vis1 = np.zeros((len(me1.vertices),1))
 for i in range(len(me1.vertices)):
-    hit_loc = bvhtree.ray_cast(cam.location, me1.vertices[i].co-cam.location)
+    hit_loc = bvhtree.ray_cast(cam_sou.location, me1.vertices[i].co-cam_sou.location)
     if not hit_loc[0]:
         continue
-    if (hit_loc[0]-me1.vertices[i].co).length < 1e-3:
+    if (hit_loc[0]-me1.vertices[i].co).length < 1e-5:
         vis1[i] = 1
 
 
@@ -172,6 +208,7 @@ if ob2.data.materials:
 else:
     ob2.data.materials.append(mat)
 
+scene.camera = bpy.data.objects['Camera_tar']
 bpy.data.scenes['Scene'].render.filepath = target_folder+'maskmap.png'
 bpy.ops.render.render(write_still=True, use_viewport=True)
 
