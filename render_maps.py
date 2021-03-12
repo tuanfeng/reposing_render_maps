@@ -6,12 +6,16 @@ import bpy
 import os
 cwd = os.getcwd()
 import sys
+
 sys.path.append(cwd)
 
 import config
 target_folder = cwd + '/' + config.target_folder
-file_path_source = cwd + '/' + config.file_path_source
-file_path_target = cwd + '/' + config.file_path_target
+file_path_source_obj = cwd + '/' + config.file_path_source_obj
+file_path_source_cam = cwd + '/' + config.file_path_source_cam
+
+file_path_target_obj = cwd + '/' + config.file_path_target_obj
+file_path_target_cam = cwd + '/' + config.file_path_target_cam
 
 #for o in bpy.context.scene.objects:
 #    if o.type == 'MESH':
@@ -22,20 +26,33 @@ file_path_target = cwd + '/' + config.file_path_target
 
 # source
 old_objs = set(bpy.context.scene.objects)
-bpy.ops.import_scene.obj(filepath = file_path_source, split_mode='OFF')
+bpy.ops.import_scene.obj(filepath = file_path_source_obj, split_mode='OFF')
 imported_objs = set(bpy.context.scene.objects) - old_objs
 obj1_name = list(imported_objs)[0].name
+source_img_res_x = config.source_img_res_x
+source_img_res_y = config.source_img_res_y
 
 #target
 old_objs = set(bpy.context.scene.objects)
-bpy.ops.import_scene.obj(filepath = file_path_target, split_mode='OFF')
+bpy.ops.import_scene.obj(filepath = file_path_target_obj, split_mode='OFF')
 imported_objs = set(bpy.context.scene.objects) - old_objs
 obj2_name = list(imported_objs)[0].name
+target_img_res_x = config.target_img_res_x
+target_img_res_y = config.target_img_res_y
 
-bpy.data.objects['Camera'].location[0]=0
-bpy.data.objects['Camera'].location[1]=0
-bpy.data.objects['Camera'].location[2]=3.
-bpy.data.objects['Camera'].rotation_euler[0]=0.
+import numpy as np
+cam_sou = np.load(file_path_source_cam,allow_pickle=True)
+cam_tar = np.load(file_path_target_cam,allow_pickle=True)
+
+
+for scene in bpy.data.scenes:
+    scene.render.resolution_x = target_img_res_x
+    scene.render.resolution_y = target_img_res_y
+
+bpy.data.objects['Camera'].location[0]= -cam_tar['camera_translation'][0][0]
+bpy.data.objects['Camera'].location[1]= -cam_tar['camera_translation'][0][2]
+bpy.data.objects['Camera'].location[2]= cam_tar['camera_translation'][0][1]
+bpy.data.objects['Camera'].rotation_euler[0]=np.pi/2
 bpy.data.objects['Camera'].rotation_euler[1]=0
 bpy.data.objects['Camera'].rotation_euler[2]=0
 
@@ -44,16 +61,16 @@ me1 = ob1.data
 ob2 = bpy.data.objects[obj2_name]
 me2 = ob2.data
 
-ob1.rotation_euler[0] = 0
-ob2.rotation_euler[0] = 0
+#ob1.rotation_euler[0] = 0
+#ob2.rotation_euler[0] = 0
 
 import numpy as np
 offset3 = np.zeros((len(me1.vertices),3))
 
 for i in range(len(me1.vertices)):
-	offset3[i,0] = me2.vertices[i].co[0] - me1.vertices[i].co[0]
-	offset3[i,1] = me2.vertices[i].co[1] - me1.vertices[i].co[1]
-	offset3[i,2] = me2.vertices[i].co[2] - me1.vertices[i].co[2]
+    offset3[i,0] = me2.vertices[i].co[0] - me1.vertices[i].co[0]
+    offset3[i,1] = me2.vertices[i].co[1] - me1.vertices[i].co[1]
+    offset3[i,2] = me2.vertices[i].co[2] - me1.vertices[i].co[2]
 
 offset2 = np.zeros((len(me1.vertices),2))
 vis1 = np.zeros((len(me1.vertices),1))
