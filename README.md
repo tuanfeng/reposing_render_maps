@@ -1,5 +1,5 @@
 # reposing_render_maps
-<img width="600" alt="teaser" src="https://user-images.githubusercontent.com/8480701/109393612-ad632a80-791a-11eb-9a87-7d4cf80a9beb.png">
+<img width="600" alt="teaser" src="https://user-images.githubusercontent.com/8480701/110965666-5151ca80-834c-11eb-8112-eaec55b5f82c.png">
 
 render flow map and mask map between source pose and target pose
 
