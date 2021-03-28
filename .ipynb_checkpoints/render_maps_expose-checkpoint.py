@@ -103,7 +103,67 @@ bpy.ops.render.render(write_still=True, use_viewport=True)
 
 
 
+#####render done
+
+offset3 = [ [0]*3 for i in range(len(me1.vertices))]
+for i in range(len(me1.vertices)):
+    offset3[i][0] = me2.vertices[i].co[0] - me1.vertices[i].co[0]
+    offset3[i][1] = me2.vertices[i].co[1] - me1.vertices[i].co[1]
+    offset3[i][2] = me2.vertices[i].co[2] - me1.vertices[i].co[2]
+
+offset2 = [ [0]*2 for i in range(len(me1.vertices))]
+vis1 = [0]*len(me1.vertices)
+vis2 = [0]*len(me2.vertices)
+
+import bmesh
+from mathutils import Vector
+from bpy_extras.object_utils import world_to_camera_view
+
+scene = bpy.context.scene
+cam_sou = bpy.data.objects['Camera_sou']
+cam_tar = bpy.data.objects['Camera_tar']
+cs, ce = cam_tar.data.clip_start, cam_tar.data.clip_end
+mat_world_1 = bpy.data.objects[obj1_name].matrix_world
+mat_world_2 = bpy.data.objects[obj2_name].matrix_world
+for i in range(len(me1.vertices)):
+    co_ndc_1 = world_to_camera_view(scene, cam_sou, mat_world_1 * me1.vertices[i].co)
+    co_ndc_2 = world_to_camera_view(scene, cam_tar, mat_world_2 * me2.vertices[i].co)
+    if (0.0 < co_ndc_1.x < 1.0 and 0.0 < co_ndc_1.y < 1.0 and cs < co_ndc_1.z <  ce):
+        vis1[i] = 1
+    if (0.0 < co_ndc_2.x < 1.0 and 0.0 < co_ndc_2.y < 1.0 and cs < co_ndc_2.z <  ce):
+        vis2[i] = 1
+    offset2[i][0] = co_ndc_2.x - co_ndc_1.x
+    offset2[i][1] = co_ndc_2.y - co_ndc_1.y
+    
+bpy.context.scene.objects.active = ob2
+bpy.ops.object.mode_set(mode='EDIT')
+bm = bmesh.from_edit_mesh(me2)
+uv_layer = bm.loops.layers.uv.verify()
+bm.faces.layers.tex.verify()
+for f in bm.faces:
+    for l in f.loops:
+        luv = l[uv_layer]
+        luv.uv = tuple([offset2[l.vert.index][0]+.5,offset2[l.vert.index][1]+.5])
+
+bmesh.update_edit_mesh(me2)
+bpy.ops.object.mode_set(mode='OBJECT')
+
+bpy.ops.object.shade_smooth()
 
 
+mat = bpy.data.materials.get("tex_2")
+if ob2.data.materials:
+    ob2.data.materials[0] = mat
+else:
+    ob2.data.materials.append(mat)
 
+scene.camera = bpy.data.objects['Camera_tar']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
 
+    
+    
+    
+    
+    
+    
