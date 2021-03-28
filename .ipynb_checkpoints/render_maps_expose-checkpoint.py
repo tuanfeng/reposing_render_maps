@@ -143,13 +143,11 @@ bm.faces.layers.tex.verify()
 for f in bm.faces:
     for l in f.loops:
         luv = l[uv_layer]
-        luv.uv = tuple([offset2[l.vert.index][0]+.5,offset2[l.vert.index][1]+.5])
+        luv.uv = tuple([offset2[l.vert.index][0]*.2+.5,offset2[l.vert.index][1]*.2+.5])
 
 bmesh.update_edit_mesh(me2)
 bpy.ops.object.mode_set(mode='OBJECT')
-
 bpy.ops.object.shade_smooth()
-
 
 mat = bpy.data.materials.get("tex_2")
 if ob2.data.materials:
@@ -158,10 +156,139 @@ else:
     ob2.data.materials.append(mat)
 
 scene.camera = bpy.data.objects['Camera_tar']
-bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap.png'
+bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap_scale_0.2.png'
 bpy.ops.render.render(write_still=True, use_viewport=True)
 
-    
+
+bpy.context.scene.objects.active = ob2
+bpy.ops.object.mode_set(mode='EDIT')
+bm = bmesh.from_edit_mesh(me2)
+uv_layer = bm.loops.layers.uv.verify()
+bm.faces.layers.tex.verify()
+for f in bm.faces:
+    for l in f.loops:
+        luv = l[uv_layer]
+        luv.uv = tuple([offset2[l.vert.index][0]*.4+.5,offset2[l.vert.index][1]*.4+.5])
+
+bmesh.update_edit_mesh(me2)
+bpy.ops.object.mode_set(mode='OBJECT')
+bpy.ops.object.shade_smooth()
+
+mat = bpy.data.materials.get("tex_2")
+if ob2.data.materials:
+    ob2.data.materials[0] = mat
+else:
+    ob2.data.materials.append(mat)
+
+scene.camera = bpy.data.objects['Camera_tar']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap_scale_0.4.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
+
+
+bpy.context.scene.objects.active = ob2
+bpy.ops.object.mode_set(mode='EDIT')
+bm = bmesh.from_edit_mesh(me2)
+uv_layer = bm.loops.layers.uv.verify()
+bm.faces.layers.tex.verify()
+for f in bm.faces:
+    for l in f.loops:
+        luv = l[uv_layer]
+        luv.uv = tuple([offset2[l.vert.index][0]*.8+.5,offset2[l.vert.index][1]*.8+.5])
+
+bmesh.update_edit_mesh(me2)
+bpy.ops.object.mode_set(mode='OBJECT')
+bpy.ops.object.shade_smooth()
+
+mat = bpy.data.materials.get("tex_2")
+if ob2.data.materials:
+    ob2.data.materials[0] = mat
+else:
+    ob2.data.materials.append(mat)
+
+scene.camera = bpy.data.objects['Camera_tar']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap_scale_0.8.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
+
+
+bpy.context.scene.objects.active = ob2
+bpy.ops.object.mode_set(mode='EDIT')
+bm = bmesh.from_edit_mesh(me2)
+uv_layer = bm.loops.layers.uv.verify()
+bm.faces.layers.tex.verify()
+for f in bm.faces:
+    for l in f.loops:
+        luv = l[uv_layer]
+        luv.uv = tuple([offset2[l.vert.index][0]*1.6+.5,offset2[l.vert.index][1]*1.6+.5])
+
+bmesh.update_edit_mesh(me2)
+bpy.ops.object.mode_set(mode='OBJECT')
+bpy.ops.object.shade_smooth()
+
+mat = bpy.data.materials.get("tex_2")
+if ob2.data.materials:
+    ob2.data.materials[0] = mat
+else:
+    ob2.data.materials.append(mat)
+
+scene.camera = bpy.data.objects['Camera_tar']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'flowmap_scale_1.6.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
+
+
+
+
+
+
+
+
+
+from mathutils.bvhtree import BVHTree
+
+bvhtree = BVHTree.FromObject(ob1, bpy.context.scene)
+vis1 = [0]*len(me1.vertices)
+for i in range(len(me1.vertices)):
+    hit_loc = bvhtree.ray_cast(cam_sou.location, me1.vertices[i].co-cam_sou.location)
+    if not hit_loc[0]:
+        continue
+    if (hit_loc[0]-me1.vertices[i].co).length < 1e-5:
+        vis1[i] = 1
+
+bpy.context.scene.objects.active = ob2
+bpy.ops.object.mode_set(mode='EDIT')
+bm = bmesh.from_edit_mesh(me2)
+uv_layer = bm.loops.layers.uv.verify()
+bm.faces.layers.tex.verify()
+tuv_w = [.2,.2]
+tuv_b = [.7,.2]
+
+for f in bm.faces:
+    for l in f.loops:
+        luv = l[uv_layer]
+        if vis1[l.vert.index] == 1:
+            luv.uv = tuple(tuv_w)
+        else:
+            luv.uv = tuple(tuv_b)            
+        
+
+bmesh.update_edit_mesh(me2)
+bpy.ops.object.mode_set(mode='OBJECT')
+
+bpy.ops.object.shade_smooth()
+
+
+mat = bpy.data.materials.get("tex_1")
+if ob2.data.materials:
+    ob2.data.materials[0] = mat
+else:
+    ob2.data.materials.append(mat)
+
+scene.camera = bpy.data.objects['Camera_tar']
+bpy.data.scenes['Scene'].render.filepath = target_folder+'maskmap.png'
+bpy.ops.render.render(write_still=True, use_viewport=True)
+
+
+
+
     
     
     
